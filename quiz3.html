@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Connection - Discussion & Rating</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .category-selector {
+            margin-bottom: 30px;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .category-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .category-card:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .category-card.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .category-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .category-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        .question-container {
+            margin-bottom: 30px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: #e9ecef;
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.4;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-radius: 12px;
+        }
+
+        .discussion-prompt {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .rating-mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .mode-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .rating-section {
+            margin-bottom: 25px;
+        }
+
+        .rating-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .person-label {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .rating-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #e9ecef;
+            color: #666;
+        }
+
+        .rating-status.completed {
+            background: #4ade80;
+            color: white;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .star {
+            font-size: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+        }
+
+        .star.filled {
+            color: #ffd700;
+        }
+
+        .star.empty {
+            color: #e9ecef;
+        }
+
+        .rating-label {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+            min-height: 24px;
+        }
+
+        .reveal-section {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .reveal-section h3 {
+            color: #0369a1;
+            margin-bottom: 15px;
+        }
+
+        .revealed-ratings {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .revealed-rating {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .revealed-rating-person {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .revealed-rating-stars {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .revealed-rating-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f8f9fa;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .navigation-buttons .btn {
+            margin-top: 0;
+        }
+
+        .results {
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 30px auto;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .score-number {
+            font-size: 60px;
+            font-weight: 700;
+        }
+
+        .score-label {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .compatibility-message {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .category-breakdown {
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .category-result {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .category-score {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .question-result {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 3px solid #e9ecef;
+        }
+
+        .question-result.high-alignment {
+            border-left-color: #4ade80;
+            background: #f0fdf4;
+        }
+
+        .question-result.medium-alignment {
+            border-left-color: #fbbf24;
+            background: #fffbeb;
+        }
+
+        .question-result.low-alignment {
+            border-left-color: #f87171;
+            background: #fef2f2;
+        }
+
+        .question-result-text {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .ratings-display {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .person-rating {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .intro-screen {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .intro-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .intro-text {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .rating-guide {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .rating-guide h3 {
+            color: #0369a1;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .rating-guide-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .rating-guide-stars {
+            margin-right: 10px;
+            color: #ffd700;
+        }
+
+        .mode-explanation {
+            background: #f0fdf4;
+            border-left: 4px solid #4ade80;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="app">
+            <!-- Content will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        const questionCategories = [
+            {
+                id: 'values',
+                name: 'Values & Core Beliefs',
+                icon: '🎯',
+                description: 'What guides your choices when things get hard',
+                weight: 3,
+                questions: [
+                    "What values do you refuse to compromise on?",
+                    "What principles guide your decisions in relationships?",
+                    "How important is honesty, even when it hurts?",
+                    "How do you define loyalty?",
+                    "What do you believe about forgiveness?",
+                    "What do you think love should feel like long-term?",
+                    "What kind of life feels 'right' to you?"
+                ]
+            },
+            {
+                id: 'emotional',
+                name: 'Emotional Availability',
+                icon: '💭',
+                description: 'Can you feel, reflect, and take responsibility?',
+                weight: 3,
+                questions: [
+                    "How do you usually process difficult emotions?",
+                    "What emotions are hardest for you to express?",
+                    "How do you react when you're overwhelmed?",
+                    "How do you calm yourself when you're upset?",
+                    "What have past relationships taught you about yourself?",
+                    "How do you handle vulnerability?",
+                    "What does emotional safety mean to you?"
+                ]
+            },
+            {
+                id: 'communication',
+                name: 'Communication Style',
+                icon: '💬',
+                description: 'How conflict actually plays out',
+                weight: 3,
+                questions: [
+                    "How do you usually handle disagreements?",
+                    "Do you prefer to talk things out immediately or take space first?",
+                    "How do you express needs?",
+                    "How do you respond when someone criticizes you?",
+                    "How do you apologize?",
+                    "What does 'healthy communication' mean to you?",
+                    "How do you react when emotions run high?"
+                ]
+            },
+            {
+                id: 'attachment',
+                name: 'Love & Intimacy',
+                icon: '❤️',
+                description: 'How you bond and stay connected',
+                weight: 3,
+                questions: [
+                    "What makes you feel most loved?",
+                    "What makes you feel insecure in relationships?",
+                    "What does commitment mean to you?",
+                    "How do you show love day-to-day?",
+                    "How do you handle jealousy?",
+                    "What scares you most about intimacy?",
+                    "How do you maintain connection over time?"
+                ]
+            },
+            {
+                id: 'past',
+                name: 'Past Relationships',
+                icon: '📖',
+                description: 'Patterns matter more than stories',
+                weight: 2,
+                questions: [
+                    "Why did your last relationship end?",
+                    "What part did you play in that ending?",
+                    "What pattern do you notice in your past relationships?",
+                    "What did you tolerate that you wouldn't now?",
+                    "What mistake do you not want to repeat?",
+                    "Are you ready for something new now?"
+                ]
+            },
+            {
+                id: 'goals',
+                name: 'Life Goals & Direction',
+                icon: '🎯',
+                description: 'Walking toward compatible futures?',
+                weight: 3,
+                questions: [
+                    "What does a fulfilling life look like to you?",
+                    "Where do you see yourself in 5–10 years?",
+                    "How do you define success?",
+                    "What role does a partner play in your life goals?",
+                    "What dreams feel non-negotiable?",
+                    "What sacrifices are you willing to make for love?",
+                    "What sacrifices are you not willing to make?"
+                ]
+            },
+            {
+                id: 'finances',
+                name: 'Finances & Work',
+                icon: '💰',
+                description: 'Love doesn\'t erase money stress',
+                weight: 2,
+                questions: [
+                    "How do you feel about money?",
+                    "Are you more of a saver or spender?",
+                    "How do you handle financial stress?",
+                    "What role does money play in relationships?",
+                    "How do you prioritize work vs life?",
+                    "What does financial security mean to you?"
+                ]
+            },
+            {
+                id: 'family',
+                name: 'Family & Upbringing',
+                icon: '👨‍👩‍👧‍👦',
+                description: 'You date their history too',
+                weight: 2,
+                questions: [
+                    "How would you describe your childhood?",
+                    "How close are you to your family?",
+                    "How did your parents model relationships?",
+                    "What family values do you want to keep?",
+                    "Which ones do you want to break?",
+                    "What role does family play in your decisions?"
+                ]
+            },
+            {
+                id: 'boundaries',
+                name: 'Boundaries & Respect',
+                icon: '🛡️',
+                description: 'Love without boundaries isn\'t love',
+                weight: 3,
+                questions: [
+                    "What boundaries are most important to you?",
+                    "How much independence do you need?",
+                    "What behaviors feel disrespectful to you?",
+                    "What are your deal-breakers?",
+                    "How do you balance closeness and freedom?",
+                    "What boundaries are non-negotiable now?"
+                ]
+            },
+            {
+                id: 'conflict',
+                name: 'Conflict & Crisis',
+                icon: '⚡',
+                description: 'Where compatibility is proven',
+                weight: 3,
+                questions: [
+                    "How do you react under stress?",
+                    "Do you escalate or withdraw during conflict?",
+                    "What does a 'fair fight' look like to you?",
+                    "How do you repair after conflict?",
+                    "What kind of support do you want in crises?",
+                    "How do you rebuild trust?"
+                ]
+            },
+            {
+                id: 'lifestyle',
+                name: 'Daily Lifestyle',
+                icon: '🏠',
+                description: 'Love lives in the ordinary',
+                weight: 2,
+                questions: [
+                    "What does an ideal day look like?",
+                    "How social are you?",
+                    "How important is alone time?",
+                    "What does 'home' mean to you?",
+                    "How do you recharge?",
+                    "What daily habits help you thrive?"
+                ]
+            },
+            {
+                id: 'commitment',
+                name: 'Commitment & Vision',
+                icon: '💍',
+                description: 'The bottom-line clarity',
+                weight: 3,
+                questions: [
+                    "What does being 'in a relationship' mean to you?",
+                    "What would make you walk away?",
+                    "What are you willing to work through?",
+                    "How do you define partnership?",
+                    "What does growth together look like?",
+                    "What would make this relationship worth choosing every day?"
+                ]
+            }
+        ];
+
+        class DeepConnectionApp {
+            constructor() {
+                this.selectedCategories = [];
+                this.currentCategoryIndex = 0;
+                this.currentQuestionIndex = 0;
+                this.ratings = {}; // { categoryId_questionIndex: { person1: rating, person2: rating } }
+                this.currentRatingPerson = null; // 'person1' or 'person2' or null (for selection or revealed)
+                this.stage = 'intro'; // intro, categorySelect, questions, results
+                this.render();
+            }
+
+            getCurrentRatingKey() {
+                const category = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
+                return `${category.id}_${this.currentQuestionIndex}`;
+            }
+
+            render() {
+                const app = document.getElementById('app');
+                
+                switch(this.stage) {
+                    case 'intro':
+                        app.innerHTML = this.renderIntro();
+                        this.attachIntroListeners();
+                        break;
+                    case 'categorySelect':
+                        app.innerHTML = this.renderCategorySelect();
+                        this.attachCategoryListeners();
+                        break;
+                    case 'questions':
+                        app.innerHTML = this.renderQuestion();
+                        this.attachQuestionListeners();
+                        break;
+                    case 'results':
+                        app.innerHTML = this.renderResults();
+                        this.attachRestartListener();
+                        break;
+                }
+            }
+
+            renderIntro() {
+                return `
+                    <h1>💕 Deep Connection</h1>
+                    <p class="subtitle">A discussion-based compatibility assessment</p>
+                    
+                    <div class="intro-screen">
+                        <div class="intro-icon">🗣️</div>
+                        <h2 style="color: #667eea; margin-bottom: 20px;">Talk It Through Together</h2>
+                        <div class="intro-text">
+                            This is a conversation-based compatibility tool with <strong>private ratings</strong>:
+                            <br><br>
+                            <strong>📱 Read each question out loud</strong>
+                            <br>
+                            <strong>🗨️ Both share your answers verbally</strong>
+                            <br>
+                            <strong>⭐ Rate privately (one at a time)</strong>
+                            <br>
+                            <strong>🔓 Reveal ratings together</strong>
+                            <br><br>
+                            You're rating how well their answer aligns with what you're looking for in a partner. 
+                            Ratings stay hidden until both have rated.
+                        </div>
+
+                        <div class="rating-guide">
+                            <h3>⭐ Rating Guide:</h3>
+                            <div class="rating-guide-item">
+                                <span class="rating-guide-stars">⭐⭐⭐⭐⭐</span>
+                                Perfect alignment - Exactly what I need to hear
+                            </div>
+                            <div class="rating-guide-item">
+                                <span class="rating-guide-stars">⭐⭐⭐⭐</span>
+                                Strong alignment - I really like this answer
+                            </div>
+                            <div class="rating-guide-item">
+                                <span class="rating-guide-stars">⭐⭐⭐</span>
+                                Good enough - I can work with this
+                            </div>
+                            <div class="rating-guide-item">
+                                <span class="rating-guide-stars">⭐⭐</span>
+                                Some concerns - Not quite what I'm looking for
+                            </div>
+                            <div class="rating-guide-item">
+                                <span class="rating-guide-stars">⭐</span>
+                                Red flag - This is a problem for me
+                            </div>
+                        </div>
+                        
+                        <button class="btn" id="startBtn">Begin Discussion</button>
+                    </div>
+                `;
+            }
+
+            renderCategorySelect() {
+                return `
+                    <h1>💕 Deep Connection</h1>
+                    <p class="subtitle">Select categories to explore together</p>
+                    
+                    <div class="category-selector">
+                        <p style="margin-bottom: 15px; color: #666; text-align: center;">
+                            Choose 3-6 categories that matter most to both of you
+                            <br>
+                            <small>(${this.selectedCategories.length} selected)</small>
+                        </p>
+                        
+                        <div class="category-grid">
+                            ${questionCategories.map(cat => `
+                                <div class="category-card ${this.selectedCategories.includes(cat.id) ? 'selected' : ''}" 
+                                     data-category="${cat.id}">
+                                    <div class="category-icon">${cat.icon}</div>
+                                    <div class="category-name">${cat.name}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <button class="btn" id="continueBtn" ${this.selectedCategories.length < 3 ? 'disabled' : ''}>
+                        Start with ${this.selectedCategories.length} Categories
+                    </button>
+                    <button class="btn btn-secondary" id="selectAllBtn" style="margin-top: 10px;">
+                        Select All Categories
+                    </button>
+                `;
+            }
+
+            renderQuestion() {
+                const category = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
+                const question = category.questions[this.currentQuestionIndex];
+                const totalQuestions = this.getTotalQuestions();
+                const currentQuestionNumber = this.getCurrentQuestionNumber();
+                const progress = (currentQuestionNumber / totalQuestions) * 100;
+                
+                const ratingKey = this.getCurrentRatingKey();
+                const currentRatings = this.ratings[ratingKey] || { person1: 0, person2: 0 };
+                
+                const bothRated = currentRatings.person1 > 0 && currentRatings.person2 > 0;
+                const isRevealed = this.currentRatingPerson === 'revealed';
+
+                return `
+                    <h1>💕 Deep Connection</h1>
+                    <p class="subtitle">Discuss together, rate privately, reveal together</p>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+
+                    <div style="text-align: center; color: #666; margin-bottom: 20px;">
+                        Question ${currentQuestionNumber} of ${totalQuestions}
+                    </div>
+
+                    <div class="question-container">
+                        <div class="category-badge">
+                            ${category.icon} ${category.name}
+                        </div>
+                        
+                        <div class="question-text">${question}</div>
+                        
+                        ${!isRevealed ? `
+                            <div class="discussion-prompt">
+                                💡 <strong>Step 1:</strong> Both share your answers out loud
+                                <br>
+                                <strong>Step 2:</strong> Take turns rating each other privately
+                            </div>
+
+                            ${!this.currentRatingPerson ? `
+                                <div class="mode-explanation">
+                                    🔒 Choose who rates first. Pass the phone when done. Ratings stay hidden until both complete.
+                                </div>
+                                
+                                <div class="rating-mode-selector">
+                                    <button class="mode-btn" id="selectPerson1">
+                                        👤 Person 1 Rates First
+                                    </button>
+                                    <button class="mode-btn" id="selectPerson2">
+                                        👥 Person 2 Rates First
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="rating-section">
+                                    <div class="rating-header">
+                                        <span class="person-label">
+                                            ${this.currentRatingPerson === 'person1' ? '👤 Person 1 Rating' : '👥 Person 2 Rating'}
+                                        </span>
+                                        <span class="rating-status ${currentRatings[this.currentRatingPerson] > 0 ? 'completed' : ''}">
+                                            ${currentRatings[this.currentRatingPerson] > 0 ? '✓ Rated' : 'Rating...'}
+                                        </span>
+                                    </div>
+                                    <div class="rating-stars" id="rating-stars">
+                                        ${this.renderStars(currentRatings[this.currentRatingPerson], this.currentRatingPerson)}
+                                    </div>
+                                    <div class="rating-label" id="rating-label">
+                                        ${this.getRatingLabel(currentRatings[this.currentRatingPerson])}
+                                    </div>
+                                </div>
+
+                                ${currentRatings[this.currentRatingPerson] > 0 ? `
+                                    <button class="btn" id="confirmRatingBtn">
+                                        ${!bothRated ? 
+                                            (this.currentRatingPerson === 'person1' ? 'Pass to Person 2 →' : 'Pass to Person 1 →') :
+                                            'Reveal Ratings 🔓'}
+                                    </button>
+                                ` : ''}
+                            `}
+                        ` : `
+                            <div class="reveal-section">
+                                <h3>🔓 Ratings Revealed</h3>
+                                <div class="revealed-ratings">
+                                    <div class="revealed-rating">
+                                        <div class="revealed-rating-person">👤 Person 1 rated Person 2</div>
+                                        <div class="revealed-rating-stars">${'⭐'.repeat(currentRatings.person1)}</div>
+                                        <div class="revealed-rating-label">${this.getRatingLabel(currentRatings.person1)}</div>
+                                    </div>
+                                    <div class="revealed-rating">
+                                        <div class="revealed-rating-person">👥 Person 2 rated Person 1</div>
+                                        <div class="revealed-rating-stars">${'⭐'.repeat(currentRatings.person2)}</div>
+                                        <div class="revealed-rating-label">${this.getRatingLabel(currentRatings.person2)}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="navigation-buttons">
+                                ${currentQuestionNumber > 1 ? '<button class="btn btn-secondary" id="backBtn">← Back</button>' : ''}
+                                <button class="btn" id="nextBtn">
+                                    ${this.isLastQuestion() ? 'See Results →' : 'Next Question →'}
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
+
+            renderStars(rating, person) {
+                let html = '';
+                for (let i = 1; i <= 5; i++) {
+                    html += `<span class="star ${i <= rating ? 'filled' : 'empty'}" data-person="${person}" data-rating="${i}">⭐</span>`;
+                }
+                return html;
+            }
+
+            getRatingLabel(rating) {
+                const labels = {
+                    0: 'Tap stars to rate',
+                    1: '⚠️ Red flag',
+                    2: '🤔 Some concerns',
+                    3: '👍 Good enough',
+                    4: '💚 Strong alignment',
+                    5: '💖 Perfect alignment'
+                };
+                return labels[rating] || '';
+            }
+
+            renderResults() {
+                const analysis = this.analyzeCompatibility();
+                
+                return `
+                    <h1>💕 Deep Connection</h1>
+                    <p class="subtitle">Your Compatibility Analysis</p>
+                    
+                    <div class="results">
+                        <div class="score-circle">
+                            <div class="score-number">${analysis.overallScore}%</div>
+                            <div class="score-label">Compatible</div>
+                        </div>
+                        
+                        <div class="compatibility-message">
+                            ${analysis.message}
+                        </div>
+                        
+                        <p style="color: #666; margin: 20px 0;">
+                            ${analysis.summary}
+                        </p>
+                        
+                        <div style="display: flex; justify-content: space-around; margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 12px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: 700; color: #667eea;">${analysis.person1AvgRating.toFixed(1)}</div>
+                                <div style="font-size: 14px; color: #666;">Person 1's Avg Rating</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: 700; color: #764ba2;">${analysis.person2AvgRating.toFixed(1)}</div>
+                                <div style="font-size: 14px; color: #666;">Person 2's Avg Rating</div>
+                            </div>
+                        </div>
+                        
+                        <div class="category-breakdown">
+                            <h3 style="margin-bottom: 20px; color: #667eea; text-align: left;">
+                                📊 Category Breakdown
+                            </h3>
+                            ${this.renderCategoryBreakdown(analysis)}
+                        </div>
+                        
+                        <button class="btn" id="restartBtn" style="margin-top: 30px;">Start New Assessment</button>
+                    </div>
+                `;
+            }
+
+            renderCategoryBreakdown(analysis) {
+                return analysis.categories.map(cat => {
+                    const category = questionCategories.find(c => c.id === cat.id);
+                    return `
+                        <div class="category-result">
+                            <div class="category-header">
+                                <div class="category-title">
+                                    ${category.icon} ${category.name}
+                                </div>
+                                <div class="category-score">${cat.score}%</div>
+                            </div>
+                            ${this.renderQuestionResults(cat.id, category)}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderQuestionResults(categoryId, category) {
+                const html = [];
+                
+                category.questions.forEach((question, idx) => {
+                    const key = `${categoryId}_${idx}`;
+                    const ratings = this.ratings[key];
+                    
+                    if (!ratings) return;
+                    
+                    const avgRating = (ratings.person1 + ratings.person2) / 2;
+                    const difference = Math.abs(ratings.person1 - ratings.person2);
+                    
+                    let alignmentClass = 'low-alignment';
+                    let alignmentIcon = '❌';
+                    if (avgRating >= 4 && difference <= 1) {
+                        alignmentClass = 'high-alignment';
+                        alignmentIcon = '✅';
+                    } else if (avgRating >= 3) {
+                        alignmentClass = 'medium-alignment';
+                        alignmentIcon = '⚠️';
+                    }
+                    
+                    html.push(`
+                        <div class="question-result ${alignmentClass}">
+                            <div class="question-result-text">
+                                ${alignmentIcon} ${question}
+                            </div>
+                            <div class="ratings-display">
+                                <span class="person-rating">
+                                    👤 Person 1 rated: ${'⭐'.repeat(ratings.person1)}
+                                </span>
+                                <span class="person-rating">
+                                    👥 Person 2 rated: ${'⭐'.repeat(ratings.person2)}
+                                </span>
+                            </div>
+                        </div>
+                    `);
+                });
+                
+                return html.join('');
+            }
+
+            analyzeCompatibility() {
+                const categoryScores = [];
+                let totalWeight = 0;
+                let weightedScore = 0;
+                let person1Total = 0;
+                let person2Total = 0;
+                let ratingCount = 0;
+
+                this.selectedCategories.forEach(catId => {
+                    const category = questionCategories.find(c => c.id === catId);
+                    const questions = category.questions;
+                    let categoryScore = 0;
+                    let categoryCount = 0;
+
+                    questions.forEach((q, idx) => {
+                        const key = `${catId}_${idx}`;
+                        const ratings = this.ratings[key];
+                        
+                        if (ratings) {
+                            const avgRating = (ratings.person1 + ratings.person2) / 2;
+                            categoryScore += (avgRating / 5) * 100;
+                            categoryCount++;
+                            
+                            person1Total += ratings.person1;
+                            person2Total += ratings.person2;
+                            ratingCount++;
+                        }
+                    });
+
+                    const categoryPercentage = categoryCount > 0 ? Math.round(categoryScore / categoryCount) : 0;
+                    categoryScores.push({ id: catId, score: categoryPercentage });
+                    
+                    weightedScore += categoryPercentage * category.weight;
+                    totalWeight += category.weight;
+                });
+
+                const overallScore = Math.round(weightedScore / totalWeight);
+                const person1AvgRating = person1Total / ratingCount;
+                const person2AvgRating = person2Total / ratingCount;
+                
+                let message, summary;
+                if (overallScore >= 80) {
+                    message = "🔥 Exceptional Alignment";
+                    summary = "You both rated each other's answers very highly. There's strong mutual appreciation for how each of you approaches life and relationships.";
+                } else if (overallScore >= 65) {
+                    message = "💖 Strong Connection";
+                    summary = "Your ratings show good compatibility. You appreciate each other's perspectives even if you don't always see things the same way.";
+                } else if (overallScore >= 50) {
+                    message = "💛 Meaningful Potential";
+                    summary = "Mixed ratings suggest areas of alignment and some differences. Open communication will be key to navigating these differences.";
+                } else {
+                    message = "🤔 Different Perspectives";
+                    summary = "Lower ratings indicate significant differences in values or approaches. Consider whether these differences are complementary or concerning.";
+                }
+
+                return {
+                    overallScore,
+                    message,
+                    summary,
+                    categories: categoryScores,
+                    person1AvgRating,
+                    person2AvgRating
+                };
+            }
+
+            getTotalQuestions() {
+                return this.selectedCategories.reduce((sum, catId) => {
+                    const cat = questionCategories.find(c => c.id === catId);
+                    return sum + cat.questions.length;
+                }, 0);
+            }
+
+            getCurrentQuestionNumber() {
+                let count = 0;
+                for (let i = 0; i < this.currentCategoryIndex; i++) {
+                    const cat = questionCategories.find(c => c.id === this.selectedCategories[i]);
+                    count += cat.questions.length;
+                }
+                return count + this.currentQuestionIndex + 1;
+            }
+
+            isLastQuestion() {
+                const currentCat = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
+                return this.currentCategoryIndex === this.selectedCategories.length - 1 &&
+                       this.currentQuestionIndex === currentCat.questions.length - 1;
+            }
+
+            attachIntroListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    this.stage = 'categorySelect';
+                    this.render();
+                });
+            }
+
+            attachCategoryListeners() {
+                const cards = document.querySelectorAll('.category-card');
+                cards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        const catId = card.dataset.category;
+                        const index = this.selectedCategories.indexOf(catId);
+                        
+                        if (index > -1) {
+                            this.selectedCategories.splice(index, 1);
+                        } else {
+                            this.selectedCategories.push(catId);
+                        }
+                        
+                        this.render();
+                    });
+                });
+
+                const continueBtn = document.getElementById('continueBtn');
+                if (continueBtn) {
+                    continueBtn.addEventListener('click', () => {
+                        this.stage = 'questions';
+                        this.currentRatingPerson = null;
+                        this.render();
+                    });
+                }
+
+                const selectAllBtn = document.getElementById('selectAllBtn');
+                if (selectAllBtn) {
+                    selectAllBtn.addEventListener('click', () => {
+                        this.selectedCategories = questionCategories.map(c => c.id);
+                        this.render();
+                    });
+                }
+            }
+
+            attachQuestionListeners() {
+                const selectPerson1 = document.getElementById('selectPerson1');
+                const selectPerson2 = document.getElementById('selectPerson2');
+                
+                if (selectPerson1) {
+                    selectPerson1.addEventListener('click', () => {
+                        this.currentRatingPerson = 'person1';
+                        this.render();
+                    });
+                }
+                
+                if (selectPerson2) {
+                    selectPerson2.addEventListener('click', () => {
+                        this.currentRatingPerson = 'person2';
+                        this.render();
+                    });
+                }
+
+                const stars = document.querySelectorAll('.star');
+                stars.forEach(star => {
+                    star.addEventListener('click', () => {
+                        const person = star.dataset.person;
+                        const rating = parseInt(star.dataset.rating);
+                        
+                        const ratingKey = this.getCurrentRatingKey();
+                        
+                        if (!this.ratings[ratingKey]) {
+                            this.ratings[ratingKey] = { person1: 0, person2: 0 };
+                        }
+                        
+                        this.ratings[ratingKey][person] = rating;
+                        this.render();
+                    });
+                });
+
+                const confirmRatingBtn = document.getElementById('confirmRatingBtn');
+                if (confirmRatingBtn) {
+                    confirmRatingBtn.addEventListener('click', () => {
+                        const ratingKey = this.getCurrentRatingKey();
+                        const currentRatings = this.ratings[ratingKey];
+                        
+                        // Check if both have rated
+                        if (currentRatings.person1 > 0 && currentRatings.person2 > 0) {
+                            // Reveal ratings
+                            this.currentRatingPerson = 'revealed';
+                        } else {
+                            // Switch to other person
+                            this.currentRatingPerson = this.currentRatingPerson === 'person1' ? 'person2' : 'person1';
+                        }
+                        
+                        this.render();
+                    });
+                }
+
+                const nextBtn = document.getElementById('nextBtn');
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        this.moveToNextQuestion();
+                    });
+                }
+
+                const backBtn = document.getElementById('backBtn');
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        this.moveToPreviousQuestion();
+                    });
+                }
+            }
+
+            moveToNextQuestion() {
+                const currentCat = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
+                
+                if (this.currentQuestionIndex < currentCat.questions.length - 1) {
+                    this.currentQuestionIndex++;
+                } else if (this.currentCategoryIndex < this.selectedCategories.length - 1) {
+                    this.currentCategoryIndex++;
+                    this.currentQuestionIndex = 0;
+                } else {
+                    this.stage = 'results';
+                }
+                
+                // Reset to selection mode for new question
+                this.currentRatingPerson = null;
+                this.render();
+            }
+
+            moveToPreviousQuestion() {
+                if (this.currentQuestionIndex > 0) {
+                    this.currentQuestionIndex--;
+                } else if (this.currentCategoryIndex > 0) {
+                    this.currentCategoryIndex--;
+                    const prevCat = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
+                    this.currentQuestionIndex = prevCat.questions.length - 1;
+                }
+                
+                // Check if previous question was already rated
+                const ratingKey = this.getCurrentRatingKey();
+                const currentRatings = this.ratings[ratingKey] || { person1: 0, person2: 0 };
+                
+                if (currentRatings.person1 > 0 && currentRatings.person2 > 0) {
+                    // Already rated, show revealed state
+                    this.currentRatingPerson = 'revealed';
+                } else {
+                    // Not rated yet, show selection
+                    this.currentRatingPerson = null;
+                }
+                
+                this.render();
+            }
+
+            attachRestartListener() {
+                document.getElementById('restartBtn').addEventListener('click', () => {
+                    this.selectedCategories = [];
+                    this.currentCategoryIndex = 0;
+                    this.currentQuestionIndex = 0;
+                    this.ratings = {};
+                    this.currentRatingPerson = null;
+                    this.stage = 'intro';
+                    this.render();
+                });
+            }
+        }
+
+        // Initialize the app
+        new DeepConnectionApp();
+    </script>
+</body>
+</html>
