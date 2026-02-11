@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Connection - Discussion & Rating</title>
+    <title>Deep Conversation - Discussion & Rating</title>
     <style>
         * {
             margin: 0;
@@ -65,6 +65,7 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
 
         .category-card:hover {
@@ -76,6 +77,21 @@
             background: #667eea;
             color: white;
             border-color: #667eea;
+        }
+
+        .category-card.completed {
+            background: #4ade80;
+            color: white;
+            border-color: #4ade80;
+        }
+
+        .category-card.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 20px;
+            font-weight: bold;
         }
 
         .category-icon {
@@ -314,6 +330,10 @@
             background: #f8f9fa;
         }
 
+        .btn-success {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+        }
+
         .navigation-buttons {
             display: flex;
             gap: 10px;
@@ -488,6 +508,32 @@
             margin-bottom: 20px;
             font-size: 14px;
             color: #166534;
+        }
+
+        .completed-categories-banner {
+            background: #f0fdf4;
+            border: 2px solid #4ade80;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .completed-categories-banner h3 {
+            color: #166534;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .rating-collection-notice {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #0369a1;
         }
     </style>
 </head>
@@ -687,20 +733,33 @@
             }
         ];
 
-        class DeepConnectionApp {
+        class DeepConversationApp {
             constructor() {
-                this.selectedCategories = [];
-                this.currentCategoryIndex = 0;
+                this.selectedCategory = null; // Only one category at a time
+                this.completedCategories = []; // Categories that have been fully rated
                 this.currentQuestionIndex = 0;
                 this.ratings = {}; // { categoryId_questionIndex: { person1: rating, person2: rating } }
-                this.currentRatingPerson = null; // 'person1' or 'person2' or null (for selection or revealed)
+                this.currentRatingPerson = null;
                 this.stage = 'intro'; // intro, categorySelect, questions, results
                 this.render();
             }
 
             getCurrentRatingKey() {
-                const category = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
-                return `${category.id}_${this.currentQuestionIndex}`;
+                return `${this.selectedCategory}_${this.currentQuestionIndex}`;
+            }
+
+            isCategoryComplete(categoryId) {
+                return this.completedCategories.includes(categoryId);
+            }
+
+            getAllRatedCategories() {
+                // Get all categories that have at least one rating
+                const ratedCategories = new Set();
+                Object.keys(this.ratings).forEach(key => {
+                    const categoryId = key.split('_')[0];
+                    ratedCategories.add(categoryId);
+                });
+                return Array.from(ratedCategories);
             }
 
             render() {
@@ -721,14 +780,14 @@
                         break;
                     case 'results':
                         app.innerHTML = this.renderResults();
-                        this.attachRestartListener();
+                        this.attachResultsListeners();
                         break;
                 }
             }
 
             renderIntro() {
                 return `
-                    <h1>💕 Deep Connection</h1>
+                    <h1>💕 Deep Conversation</h1>
                     <p class="subtitle">A discussion-based compatibility assessment</p>
                     
                     <div class="intro-screen">
@@ -743,10 +802,10 @@
                             <br>
                             <strong>⭐ Rate privately (one at a time)</strong>
                             <br>
-                            <strong>🔓 Reveal ratings together</strong>
+                            <strong>🔓 Reveal all ratings at the end</strong>
                             <br><br>
-                            You're rating how well their answer aligns with what you're looking for in a partner. 
-                            Ratings stay hidden until both have rated.
+                            Complete one category at a time. All ratings are revealed together 
+                            when you finish the category!
                         </div>
 
                         <div class="rating-guide">
@@ -773,66 +832,78 @@
                             </div>
                         </div>
                         
-                        <button class="btn" id="startBtn">Begin Discussion</button>
+                        <button class="btn" id="startBtn">Begin Conversation</button>
                     </div>
                 `;
             }
 
             renderCategorySelect() {
                 return `
-                    <h1>💕 Deep Connection</h1>
-                    <p class="subtitle">Select categories to explore together</p>
+                    <h1>💕 Deep Conversation</h1>
+                    <p class="subtitle">Select one category to explore</p>
+                    
+                    ${this.completedCategories.length > 0 ? `
+                        <div class="completed-categories-banner">
+                            <h3>✅ ${this.completedCategories.length} ${this.completedCategories.length === 1 ? 'Category' : 'Categories'} Completed</h3>
+                            <p style="font-size: 14px; color: #166534; margin-top: 5px;">
+                                Select another category to continue or view your results
+                            </p>
+                        </div>
+                    ` : ''}
                     
                     <div class="category-selector">
                         <p style="margin-bottom: 15px; color: #666; text-align: center;">
-                            Choose 3-6 categories that matter most to both of you
-                            <br>
-                            <small>(${this.selectedCategories.length} selected)</small>
+                            Choose one category (you can add more later)
                         </p>
                         
                         <div class="category-grid">
-                            ${questionCategories.map(cat => `
-                                <div class="category-card ${this.selectedCategories.includes(cat.id) ? 'selected' : ''}" 
-                                     data-category="${cat.id}">
-                                    <div class="category-icon">${cat.icon}</div>
-                                    <div class="category-name">${cat.name}</div>
-                                </div>
-                            `).join('')}
+                            ${questionCategories.map(cat => {
+                                const isCompleted = this.completedCategories.includes(cat.id);
+                                const isSelected = this.selectedCategory === cat.id;
+                                return `
+                                    <div class="category-card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}" 
+                                         data-category="${cat.id}">
+                                        <div class="category-icon">${cat.icon}</div>
+                                        <div class="category-name">${cat.name}</div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
 
-                    <button class="btn" id="continueBtn" ${this.selectedCategories.length < 3 ? 'disabled' : ''}>
-                        Start with ${this.selectedCategories.length} Categories
+                    <button class="btn" id="continueBtn" ${!this.selectedCategory ? 'disabled' : ''}>
+                        Start Category
                     </button>
-                    <button class="btn btn-secondary" id="selectAllBtn" style="margin-top: 10px;">
-                        Select All Categories
-                    </button>
+                    
+                    ${this.completedCategories.length > 0 ? `
+                        <button class="btn btn-success" id="viewResultsBtn" style="margin-top: 10px;">
+                            📊 View Results (${this.completedCategories.length} ${this.completedCategories.length === 1 ? 'Category' : 'Categories'})
+                        </button>
+                    ` : ''}
                 `;
             }
 
             renderQuestion() {
-                const category = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
+                const category = questionCategories.find(c => c.id === this.selectedCategory);
                 const question = category.questions[this.currentQuestionIndex];
-                const totalQuestions = this.getTotalQuestions();
-                const currentQuestionNumber = this.getCurrentQuestionNumber();
-                const progress = (currentQuestionNumber / totalQuestions) * 100;
+                const totalQuestions = category.questions.length;
+                const progress = ((this.currentQuestionIndex + 1) / totalQuestions) * 100;
                 
                 const ratingKey = this.getCurrentRatingKey();
                 const currentRatings = this.ratings[ratingKey] || { person1: 0, person2: 0 };
                 
                 const bothRated = currentRatings.person1 > 0 && currentRatings.person2 > 0;
-                const isRevealed = this.currentRatingPerson === 'revealed';
 
                 return `
-                    <h1>💕 Deep Connection</h1>
-                    <p class="subtitle">Discuss together, rate privately, reveal together</p>
+                    <h1>💕 Deep Conversation</h1>
+                    <p class="subtitle">Discuss together, rate privately</p>
                     
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: ${progress}%"></div>
                     </div>
 
                     <div style="text-align: center; color: #666; margin-bottom: 20px;">
-                        Question ${currentQuestionNumber} of ${totalQuestions}
+                        Question ${this.currentQuestionIndex + 1} of ${totalQuestions}
                     </div>
 
                     <div class="question-container">
@@ -842,75 +913,54 @@
                         
                         <div class="question-text">${question}</div>
                         
-                        ${!isRevealed ? `
-                            <div class="discussion-prompt">
-                                💡 <strong>Step 1:</strong> Both share your answers out loud
-                                <br>
-                                <strong>Step 2:</strong> Take turns rating each other privately
+                        <div class="rating-collection-notice">
+                            🔒 Ratings are private. All answers will be revealed when you complete the category.
+                        </div>
+
+                        <div class="discussion-prompt">
+                            💡 <strong>Step 1:</strong> Both share your answers out loud
+                            <br>
+                            <strong>Step 2:</strong> Take turns rating each other privately
+                        </div>
+
+                        ${!this.currentRatingPerson ? `
+                            <div class="mode-explanation">
+                                Choose who rates first. Pass the phone when done.
                             </div>
-
-                            ${!this.currentRatingPerson ? `
-                                <div class="mode-explanation">
-                                    🔒 Choose who rates first. Pass the phone when done. Ratings stay hidden until both complete.
-                                </div>
-                                
-                                <div class="rating-mode-selector">
-                                    <button class="mode-btn" id="selectPerson1">
-                                        👤 Person 1 Rates First
-                                    </button>
-                                    <button class="mode-btn" id="selectPerson2">
-                                        👥 Person 2 Rates First
-                                    </button>
-                                </div>
-                            ` : `
-                                <div class="rating-section">
-                                    <div class="rating-header">
-                                        <span class="person-label">
-                                            ${this.currentRatingPerson === 'person1' ? '👤 Person 1 Rating' : '👥 Person 2 Rating'}
-                                        </span>
-                                        <span class="rating-status ${currentRatings[this.currentRatingPerson] > 0 ? 'completed' : ''}">
-                                            ${currentRatings[this.currentRatingPerson] > 0 ? '✓ Rated' : 'Rating...'}
-                                        </span>
-                                    </div>
-                                    <div class="rating-stars" id="rating-stars">
-                                        ${this.renderStars(currentRatings[this.currentRatingPerson], this.currentRatingPerson)}
-                                    </div>
-                                    <div class="rating-label" id="rating-label">
-                                        ${this.getRatingLabel(currentRatings[this.currentRatingPerson])}
-                                    </div>
-                                </div>
-
-                                ${currentRatings[this.currentRatingPerson] > 0 ? `
-                                    <button class="btn" id="confirmRatingBtn">
-                                        ${!bothRated ? 
-                                            (this.currentRatingPerson === 'person1' ? 'Pass to Person 2 →' : 'Pass to Person 1 →') :
-                                            'Reveal Ratings 🔓'}
-                                    </button>
-                                ` : ''}
-                            `}
-                        ` : `
-                            <div class="reveal-section">
-                                <h3>🔓 Ratings Revealed</h3>
-                                <div class="revealed-ratings">
-                                    <div class="revealed-rating">
-                                        <div class="revealed-rating-person">👤 Person 1 rated Person 2</div>
-                                        <div class="revealed-rating-stars">${'⭐'.repeat(currentRatings.person1)}</div>
-                                        <div class="revealed-rating-label">${this.getRatingLabel(currentRatings.person1)}</div>
-                                    </div>
-                                    <div class="revealed-rating">
-                                        <div class="revealed-rating-person">👥 Person 2 rated Person 1</div>
-                                        <div class="revealed-rating-stars">${'⭐'.repeat(currentRatings.person2)}</div>
-                                        <div class="revealed-rating-label">${this.getRatingLabel(currentRatings.person2)}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="navigation-buttons">
-                                ${currentQuestionNumber > 1 ? '<button class="btn btn-secondary" id="backBtn">← Back</button>' : ''}
-                                <button class="btn" id="nextBtn">
-                                    ${this.isLastQuestion() ? 'See Results →' : 'Next Question →'}
+                            
+                            <div class="rating-mode-selector">
+                                <button class="mode-btn" id="selectPerson1">
+                                    👤 Person 1 Rates First
+                                </button>
+                                <button class="mode-btn" id="selectPerson2">
+                                    👥 Person 2 Rates First
                                 </button>
                             </div>
+                        ` : `
+                            <div class="rating-section">
+                                <div class="rating-header">
+                                    <span class="person-label">
+                                        ${this.currentRatingPerson === 'person1' ? '👤 Person 1 Rating' : '👥 Person 2 Rating'}
+                                    </span>
+                                    <span class="rating-status ${currentRatings[this.currentRatingPerson] > 0 ? 'completed' : ''}">
+                                        ${currentRatings[this.currentRatingPerson] > 0 ? '✓ Rated' : 'Rating...'}
+                                    </span>
+                                </div>
+                                <div class="rating-stars" id="rating-stars">
+                                    ${this.renderStars(currentRatings[this.currentRatingPerson], this.currentRatingPerson)}
+                                </div>
+                                <div class="rating-label" id="rating-label">
+                                    ${this.getRatingLabel(currentRatings[this.currentRatingPerson])}
+                                </div>
+                            </div>
+
+                            ${currentRatings[this.currentRatingPerson] > 0 ? `
+                                <button class="btn" id="confirmRatingBtn">
+                                    ${!bothRated ? 
+                                        (this.currentRatingPerson === 'person1' ? 'Pass to Person 2 →' : 'Pass to Person 1 →') :
+                                        (this.currentQuestionIndex === totalQuestions - 1 ? 'Complete & Reveal All 🔓' : 'Next Question →')}
+                                </button>
+                            ` : ''}
                         `}
                     </div>
                 `;
@@ -940,7 +990,7 @@
                 const analysis = this.analyzeCompatibility();
                 
                 return `
-                    <h1>💕 Deep Connection</h1>
+                    <h1>💕 Deep Conversation</h1>
                     <p class="subtitle">Your Compatibility Analysis</p>
                     
                     <div class="results">
@@ -970,12 +1020,19 @@
                         
                         <div class="category-breakdown">
                             <h3 style="margin-bottom: 20px; color: #667eea; text-align: left;">
-                                📊 Category Breakdown
+                                📊 Category Breakdown (${this.completedCategories.length} ${this.completedCategories.length === 1 ? 'Category' : 'Categories'})
                             </h3>
                             ${this.renderCategoryBreakdown(analysis)}
                         </div>
                         
-                        <button class="btn" id="restartBtn" style="margin-top: 30px;">Start New Assessment</button>
+                        <div style="display: flex; gap: 10px; margin-top: 30px;">
+                            <button class="btn btn-secondary" id="addMoreBtn" style="flex: 1; margin-top: 0;">
+                                ➕ Add Another Category
+                            </button>
+                            <button class="btn" id="restartBtn" style="flex: 1; margin-top: 0;">
+                                🔄 Start Over
+                            </button>
+                        </div>
                     </div>
                 `;
             }
@@ -1047,7 +1104,7 @@
                 let person2Total = 0;
                 let ratingCount = 0;
 
-                this.selectedCategories.forEach(catId => {
+                this.completedCategories.forEach(catId => {
                     const category = questionCategories.find(c => c.id === catId);
                     const questions = category.questions;
                     let categoryScore = 0;
@@ -1075,9 +1132,9 @@
                     totalWeight += category.weight;
                 });
 
-                const overallScore = Math.round(weightedScore / totalWeight);
-                const person1AvgRating = person1Total / ratingCount;
-                const person2AvgRating = person2Total / ratingCount;
+                const overallScore = totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0;
+                const person1AvgRating = ratingCount > 0 ? person1Total / ratingCount : 0;
+                const person2AvgRating = ratingCount > 0 ? person2Total / ratingCount : 0;
                 
                 let message, summary;
                 if (overallScore >= 80) {
@@ -1104,28 +1161,6 @@
                 };
             }
 
-            getTotalQuestions() {
-                return this.selectedCategories.reduce((sum, catId) => {
-                    const cat = questionCategories.find(c => c.id === catId);
-                    return sum + cat.questions.length;
-                }, 0);
-            }
-
-            getCurrentQuestionNumber() {
-                let count = 0;
-                for (let i = 0; i < this.currentCategoryIndex; i++) {
-                    const cat = questionCategories.find(c => c.id === this.selectedCategories[i]);
-                    count += cat.questions.length;
-                }
-                return count + this.currentQuestionIndex + 1;
-            }
-
-            isLastQuestion() {
-                const currentCat = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
-                return this.currentCategoryIndex === this.selectedCategories.length - 1 &&
-                       this.currentQuestionIndex === currentCat.questions.length - 1;
-            }
-
             attachIntroListeners() {
                 document.getElementById('startBtn').addEventListener('click', () => {
                     this.stage = 'categorySelect';
@@ -1138,13 +1173,14 @@
                 cards.forEach(card => {
                     card.addEventListener('click', () => {
                         const catId = card.dataset.category;
-                        const index = this.selectedCategories.indexOf(catId);
                         
-                        if (index > -1) {
-                            this.selectedCategories.splice(index, 1);
-                        } else {
-                            this.selectedCategories.push(catId);
+                        // Don't allow selecting already completed categories
+                        if (this.completedCategories.includes(catId)) {
+                            return;
                         }
+                        
+                        // Only one category can be selected at a time
+                        this.selectedCategory = this.selectedCategory === catId ? null : catId;
                         
                         this.render();
                     });
@@ -1154,15 +1190,16 @@
                 if (continueBtn) {
                     continueBtn.addEventListener('click', () => {
                         this.stage = 'questions';
+                        this.currentQuestionIndex = 0;
                         this.currentRatingPerson = null;
                         this.render();
                     });
                 }
 
-                const selectAllBtn = document.getElementById('selectAllBtn');
-                if (selectAllBtn) {
-                    selectAllBtn.addEventListener('click', () => {
-                        this.selectedCategories = questionCategories.map(c => c.id);
+                const viewResultsBtn = document.getElementById('viewResultsBtn');
+                if (viewResultsBtn) {
+                    viewResultsBtn.addEventListener('click', () => {
+                        this.stage = 'results';
                         this.render();
                     });
                 }
@@ -1211,89 +1248,69 @@
                         
                         // Check if both have rated
                         if (currentRatings.person1 > 0 && currentRatings.person2 > 0) {
-                            // Reveal ratings
-                            this.currentRatingPerson = 'revealed';
+                            // Check if this is the last question
+                            const category = questionCategories.find(c => c.id === this.selectedCategory);
+                            if (this.currentQuestionIndex === category.questions.length - 1) {
+                                // Last question - complete category and show results
+                                this.completeCurrentCategory();
+                            } else {
+                                // Not last question - move to next
+                                this.moveToNextQuestion();
+                            }
                         } else {
                             // Switch to other person
                             this.currentRatingPerson = this.currentRatingPerson === 'person1' ? 'person2' : 'person1';
+                            this.render();
                         }
-                        
-                        this.render();
-                    });
-                }
-
-                const nextBtn = document.getElementById('nextBtn');
-                if (nextBtn) {
-                    nextBtn.addEventListener('click', () => {
-                        this.moveToNextQuestion();
-                    });
-                }
-
-                const backBtn = document.getElementById('backBtn');
-                if (backBtn) {
-                    backBtn.addEventListener('click', () => {
-                        this.moveToPreviousQuestion();
                     });
                 }
             }
 
-            moveToNextQuestion() {
-                const currentCat = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
-                
-                if (this.currentQuestionIndex < currentCat.questions.length - 1) {
-                    this.currentQuestionIndex++;
-                } else if (this.currentCategoryIndex < this.selectedCategories.length - 1) {
-                    this.currentCategoryIndex++;
-                    this.currentQuestionIndex = 0;
-                } else {
-                    this.stage = 'results';
+            completeCurrentCategory() {
+                // Mark current category as completed
+                if (!this.completedCategories.includes(this.selectedCategory)) {
+                    this.completedCategories.push(this.selectedCategory);
                 }
                 
-                // Reset to selection mode for new question
+                // Show results
+                this.stage = 'results';
+                this.render();
+            }
+
+            moveToNextQuestion() {
+                this.currentQuestionIndex++;
                 this.currentRatingPerson = null;
                 this.render();
             }
 
-            moveToPreviousQuestion() {
-                if (this.currentQuestionIndex > 0) {
-                    this.currentQuestionIndex--;
-                } else if (this.currentCategoryIndex > 0) {
-                    this.currentCategoryIndex--;
-                    const prevCat = questionCategories.find(c => c.id === this.selectedCategories[this.currentCategoryIndex]);
-                    this.currentQuestionIndex = prevCat.questions.length - 1;
+            attachResultsListeners() {
+                const addMoreBtn = document.getElementById('addMoreBtn');
+                if (addMoreBtn) {
+                    addMoreBtn.addEventListener('click', () => {
+                        // Reset current category but keep ratings and completed categories
+                        this.selectedCategory = null;
+                        this.stage = 'categorySelect';
+                        this.render();
+                    });
                 }
-                
-                // Check if previous question was already rated
-                const ratingKey = this.getCurrentRatingKey();
-                const currentRatings = this.ratings[ratingKey] || { person1: 0, person2: 0 };
-                
-                if (currentRatings.person1 > 0 && currentRatings.person2 > 0) {
-                    // Already rated, show revealed state
-                    this.currentRatingPerson = 'revealed';
-                } else {
-                    // Not rated yet, show selection
-                    this.currentRatingPerson = null;
-                }
-                
-                this.render();
-            }
 
-            attachRestartListener() {
-                document.getElementById('restartBtn').addEventListener('click', () => {
-                    this.selectedCategories = [];
-                    this.currentCategoryIndex = 0;
-                    this.currentQuestionIndex = 0;
-                    this.ratings = {};
-                    this.currentRatingPerson = null;
-                    this.stage = 'intro';
-                    this.render();
-                });
+                const restartBtn = document.getElementById('restartBtn');
+                if (restartBtn) {
+                    restartBtn.addEventListener('click', () => {
+                        this.selectedCategory = null;
+                        this.completedCategories = [];
+                        this.currentQuestionIndex = 0;
+                        this.ratings = {};
+                        this.currentRatingPerson = null;
+                        this.stage = 'intro';
+                        this.render();
+                    });
+                }
             }
         }
 
         // Initialize the app
-        new DeepConnectionApp();
+        new DeepConversationApp();
     </script>
 </body>
-
 </html>
